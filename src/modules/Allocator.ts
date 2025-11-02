@@ -269,14 +269,14 @@ class Allocator {
     const requiresSpreadCheck = this.optimizationMode !== 'annealing';
     const meetsSpreadTolerance = (() => {
       if (!requiresSpreadCheck) return true;
-      const finalSpread = spreads?.final;
-      if (finalSpread === undefined) return false;
-      if (this.apySpreadTolerance > 0) {
-        return finalSpread <= this.apySpreadTolerance;
-      }
       const currentSpread = spreads?.current;
-      if (currentSpread === undefined) return true;
-      return finalSpread + APY_SPREAD_EPSILON < currentSpread;
+      const finalSpread = spreads?.final;
+      if (currentSpread === undefined || finalSpread === undefined) return false;
+      const improvement = currentSpread - finalSpread;
+      if (this.apySpreadTolerance > 0) {
+        return improvement > this.apySpreadTolerance;
+      }
+      return improvement > APY_SPREAD_EPSILON;
     })();
 
     switch (this.optimizationMode) {
