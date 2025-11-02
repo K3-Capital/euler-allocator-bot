@@ -127,11 +127,13 @@ export async function notifyRun(runLog: RunLog) {
   })();
 
   const txLine = (() => {
-    if (!runLog.result?.startsWith('0x')) return undefined;
+    const { result } = runLog;
+    if (!result || !result.startsWith('0x')) return undefined;
 
-    const explorerUrl = getExplorerTxUrl(ENV.CHAIN_ID, runLog.result);
+    const txHash = result as `0x${string}`;
+    const explorerUrl = getExplorerTxUrl(ENV.CHAIN_ID, txHash);
 
-    return `tx ${explorerUrl ?? runLog.result}`;
+    return `tx ${explorerUrl ?? txHash}`;
   })();
 
   const message = [
