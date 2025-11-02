@@ -1,4 +1,4 @@
-import { defineChain } from 'viem';
+import { defineChain, type Hash } from 'viem';
 import { arbitrum, base, bsc, mainnet } from 'viem/chains';
 
 export const plasma = defineChain({
@@ -95,4 +95,21 @@ export function getChainNameDefiLlama(chainId: number) {
     default:
       throw new Error(`Unsupported chainId: ${chainId}`);
   }
+}
+
+/**
+ * @notice Build the default block explorer transaction URL for the given chain
+ * @param chainId The chain ID associated with the transaction
+ * @param hash The transaction hash
+ * @returns The full explorer URL or undefined when the chain has no default explorer
+ */
+export function getExplorerTxUrl(chainId: number, hash: Hash) {
+  const chain = getChain(chainId);
+  const explorerUrl = chain.blockExplorers?.default?.url;
+
+  if (!explorerUrl) return undefined;
+
+  const normalizedExplorerUrl = explorerUrl.endsWith('/') ? explorerUrl.slice(0, -1) : explorerUrl;
+
+  return `${normalizedExplorerUrl}/tx/${hash}`;
 }

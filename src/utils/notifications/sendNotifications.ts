@@ -1,6 +1,6 @@
 import ENV from '@/constants/constants';
 import { RunLog } from '@/types/types';
-import { getChainName } from '../common/chainConversion';
+import { getChainName, getExplorerTxUrl } from '../common/chainConversion';
 import { logger } from '../common/log';
 import { sendSlackMessage } from './slack';
 import { sendTelegramMessage } from './telegram';
@@ -126,7 +126,15 @@ export async function notifyRun(runLog: RunLog) {
     return runLog.result;
   })();
 
-  const txLine = runLog.result?.startsWith('0x') ? `tx ${runLog.result}` : undefined;
+  const txLine = (() => {
+    const { result } = runLog;
+    if (!result || !result.startsWith('0x')) return undefined;
+
+    const txHash = result as `0x${string}`;
+    const explorerUrl = getExplorerTxUrl(ENV.CHAIN_ID, txHash);
+
+    return `tx ${explorerUrl ?? txHash}`;
+  })();
 
   const message = [
     `Rebalance ${resultLabel.toUpperCase()} (mode: ${runLog.mode})`,
