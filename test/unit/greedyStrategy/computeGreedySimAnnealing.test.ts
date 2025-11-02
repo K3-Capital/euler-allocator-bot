@@ -23,6 +23,9 @@ jest.mock('../../../src/utils/greedyStrategy/computeGreedyReturns', () => ({
   computeGreedyReturns: (...args: unknown[]) => computeGreedyReturnsMock(...args),
 }));
 
+const ADDRESS_ONE = '0x0000000000000000000000000000000000000001' as Address;
+const ADDRESS_TWO = '0x0000000000000000000000000000000000000002' as Address;
+
 describe('computeGreedySimAnnealing', () => {
   const defaultVaultProps = {
     vault: zeroAddress as Address,
@@ -108,14 +111,14 @@ describe('computeGreedySimAnnealing', () => {
     it('case - no constraints', () => {
       const temperature = 1;
       const strategyDetails = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           ...defaultVaultProps,
-          vault: '0x1' as Address,
+          vault: ADDRESS_ONE,
           cash: BigInt(3000),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           ...defaultVaultProps,
-          vault: '0x2' as Address,
+          vault: ADDRESS_TWO,
           supplyCap: BigInt(15000),
           cash: BigInt(9000),
           totalBorrows: BigInt(1000),
@@ -123,12 +126,12 @@ describe('computeGreedySimAnnealing', () => {
       };
       const vault = buildVault(strategyDetails);
       const currentAllocation = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           newAmount: BigInt(700),
           oldAmount: BigInt(500),
           diff: BigInt(200),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           newAmount: BigInt(250),
           oldAmount: BigInt(300),
           diff: BigInt(-50),
@@ -138,12 +141,12 @@ describe('computeGreedySimAnnealing', () => {
       const newAllocation = generateNeighbor(vault, currentAllocation, temperature);
       expect(stringifyAllocation(newAllocation)).toEqual(
         stringifyAllocation({
-          '0x1': {
+          [ADDRESS_ONE]: {
             newAmount: BigInt(420),
             oldAmount: BigInt(500),
             diff: BigInt(-80),
           },
-          '0x2': {
+          [ADDRESS_TWO]: {
             newAmount: BigInt(530),
             oldAmount: BigInt(300),
             diff: BigInt(230),
@@ -154,14 +157,14 @@ describe('computeGreedySimAnnealing', () => {
     it('case - withdrawal constraint', () => {
       const temperature = 1;
       const strategyDetails = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           ...defaultVaultProps,
-          vault: '0x1' as Address,
+          vault: ADDRESS_ONE,
           cash: BigInt(150),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           ...defaultVaultProps,
-          vault: '0x2' as Address,
+          vault: ADDRESS_TWO,
           supplyCap: BigInt(15000),
           cash: BigInt(9000),
           totalBorrows: BigInt(1000),
@@ -169,12 +172,12 @@ describe('computeGreedySimAnnealing', () => {
       };
       const vault = buildVault(strategyDetails);
       const currentAllocation = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           newAmount: BigInt(400),
           oldAmount: BigInt(500),
           diff: BigInt(-100),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           newAmount: BigInt(300),
           oldAmount: BigInt(300),
           diff: BigInt(0),
@@ -184,12 +187,12 @@ describe('computeGreedySimAnnealing', () => {
       const newAllocation = generateNeighbor(vault, currentAllocation, temperature);
       expect(stringifyAllocation(newAllocation)).toEqual(
         stringifyAllocation({
-          '0x1': {
+          [ADDRESS_ONE]: {
             newAmount: BigInt(380),
             oldAmount: BigInt(500),
             diff: BigInt(-120),
           },
-          '0x2': {
+          [ADDRESS_TWO]: {
             newAmount: BigInt(320),
             oldAmount: BigInt(300),
             diff: BigInt(20),
@@ -200,14 +203,14 @@ describe('computeGreedySimAnnealing', () => {
     it('case - deposit constraint', () => {
       const temperature = 1;
       const strategyDetails = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           ...defaultVaultProps,
-          vault: '0x1' as Address,
+          vault: ADDRESS_ONE,
           cash: BigInt(3000),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           ...defaultVaultProps,
-          vault: '0x2' as Address,
+          vault: ADDRESS_TWO,
           supplyCap: BigInt(15000),
           cash: BigInt(9000),
           totalBorrows: BigInt(5800),
@@ -215,12 +218,12 @@ describe('computeGreedySimAnnealing', () => {
       };
       const vault = buildVault(strategyDetails);
       const currentAllocation = {
-        '0x1': {
+        [ADDRESS_ONE]: {
           newAmount: BigInt(700),
           oldAmount: BigInt(500),
           diff: BigInt(200),
         },
-        '0x2': {
+        [ADDRESS_TWO]: {
           newAmount: BigInt(400),
           oldAmount: BigInt(300),
           diff: BigInt(100),
@@ -230,12 +233,12 @@ describe('computeGreedySimAnnealing', () => {
       const newAllocation = generateNeighbor(vault, currentAllocation, temperature);
       expect(stringifyAllocation(newAllocation)).toEqual(
         stringifyAllocation({
-          '0x1': {
+          [ADDRESS_ONE]: {
             newAmount: BigInt(660),
             oldAmount: BigInt(500),
             diff: BigInt(160),
           },
-          '0x2': {
+          [ADDRESS_TWO]: {
             newAmount: BigInt(440),
             oldAmount: BigInt(300),
             diff: BigInt(140),
@@ -248,14 +251,14 @@ describe('computeGreedySimAnnealing', () => {
   describe('main function', () => {
     let randomSpy: jest.SpyInstance<number, []>;
     const strategyDetails = {
-      '0x1': {
+      [ADDRESS_ONE]: {
         ...defaultVaultProps,
-        vault: '0x1' as Address,
+        vault: ADDRESS_ONE,
         cash: BigInt(3000),
       },
-      '0x2': {
+      [ADDRESS_TWO]: {
         ...defaultVaultProps,
-        vault: '0x2' as Address,
+        vault: ADDRESS_TWO,
         supplyCap: BigInt(15000),
         cash: BigInt(9000),
         totalBorrows: BigInt(1000),
@@ -264,12 +267,12 @@ describe('computeGreedySimAnnealing', () => {
     const vault = buildVault(strategyDetails);
     const addresses = Object.keys(strategyDetails) as Address[];
     const initialAllocation = {
-      '0x1': {
+      [ADDRESS_ONE]: {
         newAmount: BigInt(700),
         oldAmount: BigInt(500),
         diff: BigInt(200),
       },
-      '0x2': {
+      [ADDRESS_TWO]: {
         newAmount: BigInt(250),
         oldAmount: BigInt(300),
         diff: BigInt(-50),
