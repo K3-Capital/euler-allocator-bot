@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    env:
+      ALLOCATION_DIFF_TOLERANCE: '1'
+      ALLOCATOR_PRIVATE_KEY: '0x1111111111111111111111111111111111111111111111111111111111111111'
+      CASH_PERCENTAGE: '0'
+      MAX_STRATEGY_APY_DIFF: '10'
+      OPTIMIZATION_MODE: 'combined'
+      APY_SPREAD_TOLERANCE: '0'
+      CHAIN_ID: '1'
+      EARN_VAULT_ADDRESS: '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+      EVC_ADDRESS: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+      INTERVAL_TIME: '60000'
+      BROADCAST: 'false'
+      RPC_URL: 'http://localhost:8545'
+      VAULT_LENS_ADDRESS: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+      EULER_EARN_VAULT_LENS_ADDRESS: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm exec prettier --check "src/**/*.{ts,tsx,js,jsx,json}" "test/**/*.{ts,tsx,js,jsx,json}"
