@@ -25,8 +25,8 @@ The service runs a looped allocator that rebalances an Euler Earn vault. Every c
 1. `getEulerEarn()` pulls vault strategy info, resolves on-chain details for each EVault, and applies optional strategy overrides.
 2. `computeGreedyReturns()` evaluates APY impact (interest + rewards) for a candidate allocation; utilization is tracked for guardrails.
 3. Mode `annealing`: `computeGreedySimAnnealing()` perturbs allocations while respecting supply caps, soft caps (`SOFT_CAPS` env), and utilization limits (`MAX_UTILIZATION`). Acceptance requires at least `ALLOCATION_DIFF_TOLERANCE` improvement to aggregate APY.
-4. Mode `equalization`: `computeUnifiedApyAllocation()` smooths strategy APYs by shifting liquidity from low-yield to high-yield vaults while preserving caps/utilization checks. Acceptance requires the post-run spread to fall beneath `APY_SPREAD_TOLERANCE` (or improve vs previous spread when the tolerance is unset).
-5. Mode `combined` (default) runs simulated annealing followed by APY equalization and enforces both tolerances before dispatch.
+4. Mode `equalization`: `computeUnifiedApyAllocation()` smooths strategy APYs by shifting liquidity from low-yield to high-yield vaults while preserving caps/utilization checks. Acceptance requires the spread improvement to exceed `APY_SPREAD_TOLERANCE` (or be strictly positive when the tolerance is unset).
+5. Mode `combined` (default) runs simulated annealing followed by APY equalization and enforces both the APY improvement and spread-improvement tolerances before dispatch.
 6. `verifyAllocation()` ensures reallocations clear their configured tolerances, utilization is improved, and caps are respected.
 7. `executeRebalance()` prepares an EVC batch call packed with a single `EulerEarn.reallocate` entry. It simulates first, enforces `MAX_GAS_COST` (when set), then either broadcasts via wallet client or returns `"simulation"`.
 8. `notifyRun()` routes success/error summaries to Telegram/Slack using env-provided credentials.
@@ -39,7 +39,7 @@ Parsed in `src/constants/constants.ts` (required unless noted):
 - `NO_IDLE_VAULT` (`true`/`false`, default `false`) – set to `true` when the strategy set has no idle vault; requires `CASH_PERCENTAGE = 0`.
 - `MAX_STRATEGY_APY_DIFF` (number %) – optional cap on cross-strategy APY spread during annealing.
 - `OPTIMIZATION_MODE` (`annealing` | `equalization` | `combined`, default `combined`) – selects which optimization pipeline the allocator executes; CLI `--mode/--optimizer/--strategy` overrides this at runtime.
-- `APY_SPREAD_TOLERANCE` (number %) – target ceiling for the APY spread when equalization is enabled; if omitted, any strictly tighter spread is accepted.
+- `APY_SPREAD_TOLERANCE` (number %) – minimum spread improvement required before an equalization rebalance is executed; if omitted, any strictly positive improvement is accepted.
 - `CHAIN_ID` – supported: 1 (mainnet), 8453 (Base), 42161 (Arbitrum), 9745 (custom Plasma chain defined in `chainConversion.ts`).
 - `EARN_VAULT_ADDRESS`, `EVC_ADDRESS`, `VAULT_LENS_ADDRESS`, `EULER_EARN_VAULT_LENS_ADDRESS` – deployed contract addresses.
 - `INTERVAL_TIME` (ms) – delay between allocation cycles.
