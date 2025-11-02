@@ -67,8 +67,7 @@ const buildReturnsDetails = (): ReturnsDetails => ({
 const buildAllocator = (apySpreadTolerance: number) =>
   new Allocator({
     allocationDiffTolerance: 0,
-    allocatorPrivateKey:
-      '0x1111111111111111111111111111111111111111111111111111111111111111',
+    allocatorPrivateKey: '0x1111111111111111111111111111111111111111111111111111111111111111',
     cashPercentage: 0n,
     chainId: 1,
     earnVaultAddress: '0x0000000000000000000000000000000000000003',
