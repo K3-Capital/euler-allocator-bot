@@ -109,9 +109,7 @@ export function getExplorerTxUrl(chainId: number, hash: Hash) {
 
   if (!explorerUrl) return undefined;
 
-  const normalizedExplorerUrl = explorerUrl.endsWith('/')
-    ? explorerUrl.slice(0, -1)
-    : explorerUrl;
+  const normalizedExplorerUrl = explorerUrl.endsWith('/') ? explorerUrl.slice(0, -1) : explorerUrl;
 
   return `${normalizedExplorerUrl}/tx/${hash}`;
 }

@@ -44,8 +44,7 @@ describe('chainConversion', () => {
   });
 
   describe('getExplorerTxUrl', () => {
-    const hash =
-      '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    const hash = '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
     it('case - mainnet explorer', () => {
       expect(getExplorerTxUrl(1, hash)).toBe(`https://etherscan.io/tx/${hash}`);
