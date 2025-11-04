@@ -32,7 +32,7 @@ const ENV = {
   MAX_STRATEGY_APY_DIFF: Number(
     parseEnvVar(process.env.MAX_STRATEGY_APY_DIFF, 'MAX_STRATEGY_APY_DIFF'),
   ),
-  /** @notice Optimization mode the allocator should run (annealing, equalization, combined) */
+  /** @notice Optimization mode the allocator should run (annealing, equalization, combined, drain) */
   OPTIMIZATION_MODE: resolveOptimizationMode(process.env.OPTIMIZATION_MODE),
   /** @notice Target maximum APY spread after equalization (percentage, e.g. "3" means 3%). Only used when equalization runs */
   APY_SPREAD_TOLERANCE: Number(process.env.APY_SPREAD_TOLERANCE || 0),
@@ -68,6 +68,16 @@ const ENV = {
   MAX_UTILIZATION: Number(process.env.MAX_UTILIZATION || 0),
   /** @notice Optional. Min/Max allocations to strategies. Comma separated array of `vault_address:min_amount:max_amount`, where amount is in underlying wei */
   SOFT_CAPS: parseSoftCaps(process.env.SOFT_CAPS),
+  /** @notice Optional. Source vault drained when running in drain mode */
+  DRAIN_SOURCE_VAULT: process.env.DRAIN_SOURCE_VAULT
+    ? parseContractAddress(process.env.DRAIN_SOURCE_VAULT)
+    : undefined,
+  /** @notice Optional. Destination vault receiving funds when running in drain mode */
+  DRAIN_TARGET_VAULT: process.env.DRAIN_TARGET_VAULT
+    ? parseContractAddress(process.env.DRAIN_TARGET_VAULT)
+    : undefined,
+  /** @notice Optional. Threshold (in underlying wei) above which drain mode transfers funds */
+  DRAIN_THRESHOLD: process.env.DRAIN_THRESHOLD ? BigInt(process.env.DRAIN_THRESHOLD) : undefined,
 };
 
 export default ENV;

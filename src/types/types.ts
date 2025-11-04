@@ -22,7 +22,7 @@ export const protocolSchema = z.enum(['euler']);
 /**
  * @notice Available optimization modes for the allocator
  */
-export const optimizationModeSchema = z.enum(['annealing', 'equalization', 'combined']);
+export const optimizationModeSchema = z.enum(['annealing', 'equalization', 'combined', 'drain']);
 export type OptimizationMode = z.infer<typeof optimizationModeSchema>;
 
 /**

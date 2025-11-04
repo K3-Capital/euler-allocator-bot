@@ -27,9 +27,10 @@ The service runs a looped allocator that rebalances an Euler Earn vault. Every c
 3. Mode `annealing`: `computeGreedySimAnnealing()` perturbs allocations while respecting supply caps, soft caps (`SOFT_CAPS` env), and utilization limits (`MAX_UTILIZATION`). Acceptance requires at least `ALLOCATION_DIFF_TOLERANCE` improvement to aggregate APY.
 4. Mode `equalization`: `computeUnifiedApyAllocation()` smooths strategy APYs by shifting liquidity from low-yield to high-yield vaults while preserving caps/utilization checks. Acceptance requires the spread improvement to exceed `APY_SPREAD_TOLERANCE` (or be strictly positive when the tolerance is unset).
 5. Mode `combined` (default) runs simulated annealing followed by APY equalization and enforces both the APY improvement and spread-improvement tolerances before dispatch.
-6. `verifyAllocation()` ensures reallocations clear their configured tolerances, utilization is improved, and caps are respected.
-7. `executeRebalance()` prepares an EVC batch call packed with a single `EulerEarn.reallocate` entry. It simulates first, enforces `MAX_GAS_COST` (when set), then either broadcasts via wallet client or returns `"simulation"`.
-8. `notifyRun()` routes success/error summaries to Telegram/Slack using env-provided credentials.
+6. Mode `drain`: `computeDrainAllocation()` moves ~99% of the available funds (subject to caps/withdraw limits) from a configured source vault into a target vault whenever the source balance exceeds `DRAIN_THRESHOLD`.
+7. `verifyAllocation()` ensures reallocations clear their configured tolerances, utilization is improved, and caps are respected.
+8. `executeRebalance()` prepares an EVC batch call packed with a single `EulerEarn.reallocate` entry. It simulates first, enforces `MAX_GAS_COST` (when set), then either broadcasts via wallet client or returns `"simulation"`.
+9. `notifyRun()` routes success/error summaries to Telegram/Slack using env-provided credentials.
 
 ## Environment Configuration
 Parsed in `src/constants/constants.ts` (required unless noted):
@@ -38,7 +39,7 @@ Parsed in `src/constants/constants.ts` (required unless noted):
 - `CASH_PERCENTAGE` (bigint 18-dec) – cash reserve kept in idle vault.
 - `NO_IDLE_VAULT` (`true`/`false`, default `false`) – set to `true` when the strategy set has no idle vault; requires `CASH_PERCENTAGE = 0`.
 - `MAX_STRATEGY_APY_DIFF` (number %) – optional cap on cross-strategy APY spread during annealing.
-- `OPTIMIZATION_MODE` (`annealing` | `equalization` | `combined`, default `combined`) – selects which optimization pipeline the allocator executes; CLI `--mode/--optimizer/--strategy` overrides this at runtime.
+- `OPTIMIZATION_MODE` (`annealing` | `equalization` | `combined` | `drain`, default `combined`) – selects which optimization pipeline the allocator executes; CLI `--mode/--optimizer/--strategy` overrides this at runtime.
 - `APY_SPREAD_TOLERANCE` (number %) – minimum spread improvement required before an equalization rebalance is executed; if omitted, any strictly positive improvement is accepted.
 - `CHAIN_ID` – supported: 1 (mainnet), 8453 (Base), 42161 (Arbitrum), 9745 (custom Plasma chain defined in `chainConversion.ts`).
 - `EARN_VAULT_ADDRESS`, `EVC_ADDRESS`, `VAULT_LENS_ADDRESS`, `EULER_EARN_VAULT_LENS_ADDRESS` – deployed contract addresses.
@@ -49,6 +50,8 @@ Parsed in `src/constants/constants.ts` (required unless noted):
 - `MAX_GAS_COST` (optional bigint) – ceiling on `gas * gasPrice`; aborts if exceeded.
 - `MAX_UTILIZATION` (optional number) – utilization limit per vault; annealer prioritizes reducing breaches.
 - `SOFT_CAPS` (optional CSV `vault:min:max` in wei) – per-strategy min/max bounds.
+- `DRAIN_SOURCE_VAULT`, `DRAIN_TARGET_VAULT` (addresses) – source/recipient vaults used when `OPTIMIZATION_MODE=drain`.
+- `DRAIN_THRESHOLD` (bigint) – minimum source balance (in wei) required before drain mode attempts to move funds.
 
 Notification extras from `notificationConstants.ts`:
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` – enable Telegram messenger.
