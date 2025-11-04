@@ -38,18 +38,19 @@ export const computeDrainAllocation = ({
     throw new Error('Drain mode requires both source and target allocation entries');
   }
 
-  if (sourceAllocation.newAmount <= config.threshold) {
+  const unchangedResult = () => {
+    const cloned = structuredClone(initialAllocation);
     const untouchedReturns = computeGreedyReturns({
       vault,
-      allocation: structuredClone(initialAllocation),
+      allocation: cloned,
     });
     return {
-      allocation: structuredClone(initialAllocation),
+      allocation: cloned,
       totalReturns: untouchedReturns.totalReturns,
       details: untouchedReturns.details,
       transferred: 0n,
     };
-  }
+  };
 
   const updatedAllocation = structuredClone(initialAllocation);
   const updatedSource = updatedAllocation[config.sourceVault];
@@ -66,9 +67,9 @@ export const computeDrainAllocation = ({
 
   const destSupplyCap = getPositive(
     targetDetails.supplyCap -
-      targetDetails.totalBorrows -
-      targetDetails.cash -
-      updatedTarget.diff,
+    targetDetails.totalBorrows -
+    targetDetails.cash -
+    updatedTarget.diff,
   );
   const destStrategyCap = getPositive(vault.strategies[config.targetVault].cap - updatedTarget.newAmount);
 
@@ -85,21 +86,16 @@ export const computeDrainAllocation = ({
     (min, current) => (current < min ? current : min),
     maxUint256,
   );
+  if (transferCap === 0n) {
+    return unchangedResult();
+  }
+
   const ninetyNinePercent = (transferCap * 99n) / 100n;
   // leave a small reserve to avoid rounding issues on-chain
   const transferAmount = ninetyNinePercent > 0n ? ninetyNinePercent : transferCap;
 
-  if (transferAmount === 0n) {
-    const untouchedReturns = computeGreedyReturns({
-      vault,
-      allocation: structuredClone(initialAllocation),
-    });
-    return {
-      allocation: structuredClone(initialAllocation),
-      totalReturns: untouchedReturns.totalReturns,
-      details: untouchedReturns.details,
-      transferred: 0n,
-    };
+  if (transferAmount === 0n || transferAmount <= config.threshold) {
+    return unchangedResult();
   }
 
   updatedSource.newAmount -= transferAmount;

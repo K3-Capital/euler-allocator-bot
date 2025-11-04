@@ -27,7 +27,7 @@ The service runs a looped allocator that rebalances an Euler Earn vault. Every c
 3. Mode `annealing`: `computeGreedySimAnnealing()` perturbs allocations while respecting supply caps, soft caps (`SOFT_CAPS` env), and utilization limits (`MAX_UTILIZATION`). Acceptance requires at least `ALLOCATION_DIFF_TOLERANCE` improvement to aggregate APY.
 4. Mode `equalization`: `computeUnifiedApyAllocation()` smooths strategy APYs by shifting liquidity from low-yield to high-yield vaults while preserving caps/utilization checks. Acceptance requires the spread improvement to exceed `APY_SPREAD_TOLERANCE` (or be strictly positive when the tolerance is unset).
 5. Mode `combined` (default) runs simulated annealing followed by APY equalization and enforces both the APY improvement and spread-improvement tolerances before dispatch.
-6. Mode `drain`: `computeDrainAllocation()` moves ~99% of the available funds (subject to caps/withdraw limits) from a configured source vault into a target vault whenever the source balance exceeds `DRAIN_THRESHOLD`.
+6. Mode `drain`: `computeDrainAllocation()` moves ~99% of the available funds (subject to caps/withdraw limits) from a configured source vault into a target vault whenever the computed transfer amount exceeds `DRAIN_THRESHOLD`.
 7. `verifyAllocation()` ensures reallocations clear their configured tolerances, utilization is improved, and caps are respected.
 8. `executeRebalance()` prepares an EVC batch call packed with a single `EulerEarn.reallocate` entry. It simulates first, enforces `MAX_GAS_COST` (when set), then either broadcasts via wallet client or returns `"simulation"`.
 9. `notifyRun()` routes success/error summaries to Telegram/Slack using env-provided credentials.
@@ -51,7 +51,7 @@ Parsed in `src/constants/constants.ts` (required unless noted):
 - `MAX_UTILIZATION` (optional number) – utilization limit per vault; annealer prioritizes reducing breaches.
 - `SOFT_CAPS` (optional CSV `vault:min:max` in wei) – per-strategy min/max bounds.
 - `DRAIN_SOURCE_VAULT`, `DRAIN_TARGET_VAULT` (addresses) – source/recipient vaults used when `OPTIMIZATION_MODE=drain`.
-- `DRAIN_THRESHOLD` (bigint) – minimum source balance (in wei) required before drain mode attempts to move funds.
+- `DRAIN_THRESHOLD` (bigint) – minimum transfer amount (in wei) required before drain mode executes a move.
 
 Notification extras from `notificationConstants.ts`:
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` – enable Telegram messenger.

@@ -443,10 +443,10 @@ class Allocator {
 
     const spreadSummary = context.requiresSpreadCheck
       ? {
-          current: context.currentSpread,
-          final: finalSpread,
-          tolerance: this.apySpreadTolerance || undefined,
-        }
+        current: context.currentSpread,
+        final: finalSpread,
+        tolerance: this.apySpreadTolerance || undefined,
+      }
       : undefined;
 
     const noDrainAction =

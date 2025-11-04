@@ -82,7 +82,7 @@ describe('computeDrainAllocation', () => {
   const source = '0x0000000000000000000000000000000000000001' as Address;
   const target = '0x0000000000000000000000000000000000000002' as Address;
 
-  it('keeps allocation unchanged when below threshold', () => {
+  it('skips transfer when computed amount does not exceed threshold', () => {
     const vault = buildVault({
       sourceAddress: source,
       targetAddress: target,
@@ -99,12 +99,37 @@ describe('computeDrainAllocation', () => {
     const result = computeDrainAllocation({
       vault,
       initialAllocation,
-      config: { sourceVault: source, targetVault: target, threshold: 2_000n },
+      config: { sourceVault: source, targetVault: target, threshold: 990n },
     });
 
     expect(result.transferred).toBe(0n);
     expect(result.allocation[source].newAmount).toBe(1_000n);
     expect(result.allocation[target].newAmount).toBe(0n);
+  });
+
+  it('transfers when computed amount exceeds threshold', () => {
+    const vault = buildVault({
+      sourceAddress: source,
+      targetAddress: target,
+      sourceAllocation: 1_000n,
+      targetAllocation: 0n,
+      sourceCash: 1_000n,
+      targetCash: 0n,
+    });
+    const initialAllocation = toAllocationState({
+      [source]: 1_000n,
+      [target]: 0n,
+    });
+
+    const result = computeDrainAllocation({
+      vault,
+      initialAllocation,
+      config: { sourceVault: source, targetVault: target, threshold: 980n },
+    });
+
+    expect(result.transferred).toBe(990n);
+    expect(result.allocation[source].newAmount).toBe(10n);
+    expect(result.allocation[target].newAmount).toBe(990n);
   });
 
   it('drains 99% of the source vault into target when above threshold', () => {
@@ -124,7 +149,7 @@ describe('computeDrainAllocation', () => {
     const result = computeDrainAllocation({
       vault,
       initialAllocation,
-      config: { sourceVault: source, targetVault: target, threshold: 1_000n },
+      config: { sourceVault: source, targetVault: target, threshold: 400n },
     });
 
     expect(result.transferred).toBe(4_950n);
@@ -151,7 +176,7 @@ describe('computeDrainAllocation', () => {
     const result = computeDrainAllocation({
       vault,
       initialAllocation,
-      config: { sourceVault: source, targetVault: target, threshold: 1_000n },
+      config: { sourceVault: source, targetVault: target, threshold: 400n },
     });
 
     expect(result.transferred).toBe(495n);
