@@ -183,4 +183,30 @@ describe('computeDrainAllocation', () => {
     expect(result.allocation[source].newAmount).toBe(4_505n);
     expect(result.allocation[target].newAmount).toBe(9_995n);
   });
+
+  it('does not transfer more than available cash in source vault', () => {
+    const vault = buildVault({
+      sourceAddress: source,
+      targetAddress: target,
+      sourceAllocation: 5_000n,
+      targetAllocation: 0n,
+      sourceCash: 2_000n,
+      targetCash: 0n,
+    });
+
+    const initialAllocation = toAllocationState({
+      [source]: 5_000n,
+      [target]: 0n,
+    });
+
+    const result = computeDrainAllocation({
+      vault,
+      initialAllocation,
+      config: { sourceVault: source, targetVault: target, threshold: 100n },
+    });
+
+    expect(result.transferred).toBe(1_980n);
+    expect(result.allocation[source].newAmount).toBe(3_020n);
+    expect(result.allocation[target].newAmount).toBe(1_980n);
+  });
 });

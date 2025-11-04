@@ -59,11 +59,9 @@ export const computeDrainAllocation = ({
   const sourceDetails = vault.strategies[config.sourceVault].details;
   const targetDetails = vault.strategies[config.targetVault].details;
 
-  const withdrawable = getPositive(
-    sourceDetails.cash + updatedSource.diff < updatedSource.newAmount
-      ? sourceDetails.cash + updatedSource.diff
-      : updatedSource.newAmount,
-  );
+  const availableCash = getPositive(sourceDetails.cash);
+  const withdrawable =
+    availableCash < updatedSource.newAmount ? availableCash : updatedSource.newAmount;
 
   const destSupplyCap = getPositive(
     targetDetails.supplyCap -
