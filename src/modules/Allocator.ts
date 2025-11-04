@@ -54,6 +54,7 @@ type OptimizationOutcome = {
   finalReturns: number;
   finalReturnsDetails: ReturnsDetails;
   finalSpread?: number;
+  transferred?: bigint;
 };
 
 /**
@@ -404,6 +405,7 @@ class Allocator {
           finalAllocation: drainResult.allocation,
           finalReturns: drainResult.totalReturns,
           finalReturnsDetails: drainResult.details,
+          transferred: drainResult.transferred,
         };
       }
       case 'combined':
@@ -441,11 +443,19 @@ class Allocator {
 
     const spreadSummary = context.requiresSpreadCheck
       ? {
-        current: context.currentSpread,
-        final: finalSpread,
-        tolerance: this.apySpreadTolerance || undefined,
-      }
+          current: context.currentSpread,
+          final: finalSpread,
+          tolerance: this.apySpreadTolerance || undefined,
+        }
       : undefined;
+
+    const noDrainAction =
+      context.mode === 'drain' && outcome.transferred !== undefined && outcome.transferred === 0n;
+    if (noDrainAction) {
+      logger.info({ message: 'drain mode: nothing to transfer; skipping rebalance and notifications' });
+      return;
+    }
+
     const allocationVerified = await this.verifyAllocation(
       context.vault,
       context.currentAllocation,
