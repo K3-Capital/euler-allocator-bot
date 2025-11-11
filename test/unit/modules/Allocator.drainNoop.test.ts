@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import Allocator from '@/modules/Allocator';
 import { protocolSchema } from '@/types/types';
-import { type Address, zeroAddress, type Hex } from 'viem';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { zeroAddress, type Address, type Hex } from 'viem';
 
 const notifyRunMock = jest.fn();
 const executeRebalanceMock = jest.fn();
@@ -16,9 +16,7 @@ jest.mock('@/utils/common/executeRebalance', () => ({
 }));
 
 jest.mock('@/utils/common/log', () => {
-  const actual = jest.requireActual<typeof import('@/utils/common/log')>(
-    '@/utils/common/log',
-  );
+  const actual = jest.requireActual<typeof import('@/utils/common/log')>('@/utils/common/log');
   return {
     ...actual,
     logger: {
@@ -63,7 +61,7 @@ describe('Allocator drain mode', () => {
   it('skips notifications when no drain action is possible', async () => {
     const allocator = new Allocator({
       allocationDiffTolerance: 0,
-      allocatorPrivateKey: '0x' + '0'.repeat(64) as Hex,
+      allocatorPrivateKey: ('0x' + '0'.repeat(64)) as Hex,
       cashPercentage: 0n,
       chainId: 1,
       earnVaultAddress: zeroAddress,

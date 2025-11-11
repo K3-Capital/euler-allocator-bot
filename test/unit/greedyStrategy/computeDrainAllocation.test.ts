@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
-import { Address, zeroAddress } from 'viem';
 import { protocolSchema } from '@/types/types';
 import { computeDrainAllocation } from '@/utils/greedyStrategy/computeDrainAllocation';
+import { describe, expect, it } from '@jest/globals';
+import { Address, zeroAddress } from 'viem';
 
 const baseStrategy = {
   symbol: 'SYM',

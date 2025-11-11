@@ -19,6 +19,7 @@ import { parseContractAddress } from '@/utils/common/parser';
 import { getVaultLabel } from '@/utils/common/vaultLabels';
 import { getEulerEarnInternalBalance } from '@/utils/euler/getEulerEarnInternalBalance';
 import { getEulerVaultDetails } from '@/utils/euler/getEulerVaultDetails';
+import { computeDrainAllocation } from '@/utils/greedyStrategy/computeDrainAllocation';
 import { computeGreedyInitAlloc } from '@/utils/greedyStrategy/computeGreedyInitAlloc';
 import { computeGreedyReturns } from '@/utils/greedyStrategy/computeGreedyReturns';
 import {
@@ -31,7 +32,6 @@ import {
   calculateApySpread,
   computeUnifiedApyAllocation,
 } from '@/utils/greedyStrategy/computeUnifiedApyAllocation';
-import { computeDrainAllocation } from '@/utils/greedyStrategy/computeDrainAllocation';
 import { notifyRun } from '@/utils/notifications/sendNotifications';
 import { type Address, type Hex, type PublicClient } from 'viem';
 
@@ -336,10 +336,10 @@ class Allocator {
       this.optimizationMode === 'equalization' || this.optimizationMode === 'combined';
     const currentSpread = requiresSpreadCheck
       ? calculateApySpread({
-        vault,
-        allocation: currentAllocation,
-        returnsDetails: currentReturnsDetails,
-      })
+          vault,
+          allocation: currentAllocation,
+          returnsDetails: currentReturnsDetails,
+        })
       : undefined;
 
     return {
@@ -443,16 +443,18 @@ class Allocator {
 
     const spreadSummary = context.requiresSpreadCheck
       ? {
-        current: context.currentSpread,
-        final: finalSpread,
-        tolerance: this.apySpreadTolerance || undefined,
-      }
+          current: context.currentSpread,
+          final: finalSpread,
+          tolerance: this.apySpreadTolerance || undefined,
+        }
       : undefined;
 
     const noDrainAction =
       context.mode === 'drain' && outcome.transferred !== undefined && outcome.transferred === 0n;
     if (noDrainAction) {
-      logger.info({ message: 'drain mode: nothing to transfer; skipping rebalance and notifications' });
+      logger.info({
+        message: 'drain mode: nothing to transfer; skipping rebalance and notifications',
+      });
       return;
     }
 

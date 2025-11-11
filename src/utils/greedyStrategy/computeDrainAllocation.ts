@@ -25,10 +25,14 @@ export const computeDrainAllocation = ({
   }
 
   if (!vault.strategies[config.sourceVault]) {
-    throw new Error(`Drain mode source vault ${config.sourceVault} is not part of this Euler Earn vault`);
+    throw new Error(
+      `Drain mode source vault ${config.sourceVault} is not part of this Euler Earn vault`,
+    );
   }
   if (!vault.strategies[config.targetVault]) {
-    throw new Error(`Drain mode target vault ${config.targetVault} is not part of this Euler Earn vault`);
+    throw new Error(
+      `Drain mode target vault ${config.targetVault} is not part of this Euler Earn vault`,
+    );
   }
 
   const sourceAllocation = initialAllocation[config.sourceVault];
@@ -64,12 +68,11 @@ export const computeDrainAllocation = ({
     availableCash < updatedSource.newAmount ? availableCash : updatedSource.newAmount;
 
   const destSupplyCap = getPositive(
-    targetDetails.supplyCap -
-    targetDetails.totalBorrows -
-    targetDetails.cash -
-    updatedTarget.diff,
+    targetDetails.supplyCap - targetDetails.totalBorrows - targetDetails.cash - updatedTarget.diff,
   );
-  const destStrategyCap = getPositive(vault.strategies[config.targetVault].cap - updatedTarget.newAmount);
+  const destStrategyCap = getPositive(
+    vault.strategies[config.targetVault].cap - updatedTarget.newAmount,
+  );
 
   let destSoftCap = maxUint256;
   const softCapConfig = ENV.SOFT_CAPS[config.targetVault];
