@@ -58,6 +58,9 @@ const allocator = new Allocator({
   optimizationMode,
   apySpreadTolerance: ENV.APY_SPREAD_TOLERANCE,
   noIdleVault: ENV.NO_IDLE_VAULT,
+  drainSourceVault: ENV.DRAIN_SOURCE_VAULT,
+  drainTargetVault: ENV.DRAIN_TARGET_VAULT,
+  drainThreshold: ENV.DRAIN_THRESHOLD,
 });
 
 async function main() {

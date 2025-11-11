@@ -31,6 +31,7 @@ import {
   calculateApySpread,
   computeUnifiedApyAllocation,
 } from '@/utils/greedyStrategy/computeUnifiedApyAllocation';
+import { computeDrainAllocation } from '@/utils/greedyStrategy/computeDrainAllocation';
 import { notifyRun } from '@/utils/notifications/sendNotifications';
 import { type Address, type Hex, type PublicClient } from 'viem';
 
@@ -53,6 +54,7 @@ type OptimizationOutcome = {
   finalReturns: number;
   finalReturnsDetails: ReturnsDetails;
   finalSpread?: number;
+  transferred?: bigint;
 };
 
 /**
@@ -74,6 +76,9 @@ class Allocator {
   private optimizationMode: OptimizationMode;
   private apySpreadTolerance: number;
   private noIdleVault: boolean;
+  private drainSourceVault?: Address;
+  private drainTargetVault?: Address;
+  private drainThreshold?: bigint;
 
   /**
    * @notice Creates a new Allocator instance
@@ -93,6 +98,9 @@ class Allocator {
     optimizationMode,
     apySpreadTolerance,
     noIdleVault,
+    drainSourceVault,
+    drainTargetVault,
+    drainThreshold,
   }: {
     allocationDiffTolerance: number;
     allocatorPrivateKey: Hex;
@@ -108,6 +116,9 @@ class Allocator {
     optimizationMode: OptimizationMode;
     apySpreadTolerance: number;
     noIdleVault: boolean;
+    drainSourceVault?: Address;
+    drainTargetVault?: Address;
+    drainThreshold?: bigint;
   }) {
     this.allocationDiffTolerance = allocationDiffTolerance;
     this.allocatorPrivateKey = allocatorPrivateKey;
@@ -123,6 +134,9 @@ class Allocator {
     this.optimizationMode = optimizationMode;
     this.apySpreadTolerance = apySpreadTolerance;
     this.noIdleVault = noIdleVault;
+    this.drainSourceVault = drainSourceVault;
+    this.drainTargetVault = drainTargetVault;
+    this.drainThreshold = drainThreshold;
   }
 
   /**
@@ -266,7 +280,8 @@ class Allocator {
     if (isOutsideSoftCap(currentAllocation)) return !isOutsideSoftCap(finalAllocation);
 
     const meetsReturnTolerance = newReturns - currentReturns >= this.allocationDiffTolerance;
-    const requiresSpreadCheck = this.optimizationMode !== 'annealing';
+    const requiresSpreadCheck =
+      this.optimizationMode === 'equalization' || this.optimizationMode === 'combined';
     const meetsSpreadTolerance = (() => {
       if (!requiresSpreadCheck) return true;
       const currentSpread = spreads?.current;
@@ -282,6 +297,8 @@ class Allocator {
     switch (this.optimizationMode) {
       case 'annealing':
         return meetsReturnTolerance;
+      case 'drain':
+        return true;
       case 'equalization':
         return meetsSpreadTolerance;
       case 'combined':
@@ -315,13 +332,14 @@ class Allocator {
       allocation: currentAllocation,
     });
     const [allocatableAmount, cashAmount] = this.getAllocatableAmount(vault);
-    const requiresSpreadCheck = this.optimizationMode !== 'annealing';
+    const requiresSpreadCheck =
+      this.optimizationMode === 'equalization' || this.optimizationMode === 'combined';
     const currentSpread = requiresSpreadCheck
       ? calculateApySpread({
-          vault,
-          allocation: currentAllocation,
-          returnsDetails: currentReturnsDetails,
-        })
+        vault,
+        allocation: currentAllocation,
+        returnsDetails: currentReturnsDetails,
+      })
       : undefined;
 
     return {
@@ -368,6 +386,28 @@ class Allocator {
           finalSpread: equalization.spread,
         };
       }
+      case 'drain': {
+        if (!this.drainSourceVault || !this.drainTargetVault || this.drainThreshold === undefined) {
+          throw new Error(
+            'Drain mode requires DRAIN_SOURCE_VAULT, DRAIN_TARGET_VAULT, and DRAIN_THRESHOLD to be set',
+          );
+        }
+        const drainResult = computeDrainAllocation({
+          vault,
+          initialAllocation: currentAllocation,
+          config: {
+            sourceVault: this.drainSourceVault,
+            targetVault: this.drainTargetVault,
+            threshold: this.drainThreshold,
+          },
+        });
+        return {
+          finalAllocation: drainResult.allocation,
+          finalReturns: drainResult.totalReturns,
+          finalReturnsDetails: drainResult.details,
+          transferred: drainResult.transferred,
+        };
+      }
       case 'combined':
       default: {
         const [annealedAllocation] = computeGreedySimAnnealing({
@@ -403,11 +443,18 @@ class Allocator {
 
     const spreadSummary = context.requiresSpreadCheck
       ? {
-          current: context.currentSpread,
-          final: finalSpread,
-          tolerance: this.apySpreadTolerance || undefined,
-        }
+        current: context.currentSpread,
+        final: finalSpread,
+        tolerance: this.apySpreadTolerance || undefined,
+      }
       : undefined;
+
+    const noDrainAction =
+      context.mode === 'drain' && outcome.transferred !== undefined && outcome.transferred === 0n;
+    if (noDrainAction) {
+      logger.info({ message: 'drain mode: nothing to transfer; skipping rebalance and notifications' });
+      return;
+    }
 
     const allocationVerified = await this.verifyAllocation(
       context.vault,
