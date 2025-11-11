@@ -91,7 +91,8 @@ export const computeDrainAllocation = ({
     return unchangedResult();
   }
 
-  const transferAmount = transferCap;
+  const ninetyNinePercent = (transferCap * 99n) / 100n;
+  const transferAmount = ninetyNinePercent > 0n ? ninetyNinePercent : transferCap;
 
   if (transferAmount === 0n || transferAmount <= config.threshold) {
     return unchangedResult();
