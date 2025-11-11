@@ -50,6 +50,7 @@ export const strategyDetailsSchema = z.object({
   totalShares: z.bigint(),
   interestFee: z.number(),
   supplyCap: z.bigint(),
+  maxWithdraw: z.bigint(),
   irmConfig: z.union([eulerIrmSchema, eulerAdaptiveIrmSchema, eulerNoIrmSchema]),
 });
 export type StrategyDetails = z.infer<typeof strategyDetailsSchema>;

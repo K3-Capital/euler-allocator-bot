@@ -15,6 +15,7 @@ const baseStrategy = {
   totalShares: 0n,
   interestFee: 0,
   supplyCap: 10_000n,
+  maxWithdraw: 0n,
   irmConfig: {
     type: 'irm' as const,
     baseRate: 0n,
@@ -31,6 +32,8 @@ const buildVault = ({
   targetAllocation,
   sourceCash,
   targetCash,
+  sourceMaxWithdraw,
+  targetMaxWithdraw,
 }: {
   sourceAddress: Address;
   targetAddress: Address;
@@ -38,6 +41,8 @@ const buildVault = ({
   targetAllocation: bigint;
   sourceCash: bigint;
   targetCash: bigint;
+  sourceMaxWithdraw?: bigint;
+  targetMaxWithdraw?: bigint;
 }) => {
   return {
     strategies: {
@@ -49,6 +54,7 @@ const buildVault = ({
           ...baseStrategy,
           vault: sourceAddress,
           cash: sourceCash,
+          maxWithdraw: sourceMaxWithdraw ?? sourceCash,
           supplyCap: 20_000n,
         },
       },
@@ -60,6 +66,7 @@ const buildVault = ({
           ...baseStrategy,
           vault: targetAddress,
           cash: targetCash,
+          maxWithdraw: targetMaxWithdraw ?? targetCash,
           supplyCap: 20_000n,
         },
       },
@@ -99,7 +106,7 @@ describe('computeDrainAllocation', () => {
     const result = computeDrainAllocation({
       vault,
       initialAllocation,
-      config: { sourceVault: source, targetVault: target, threshold: 990n },
+      config: { sourceVault: source, targetVault: target, threshold: 1_000n },
     });
 
     expect(result.transferred).toBe(0n);
@@ -124,15 +131,15 @@ describe('computeDrainAllocation', () => {
     const result = computeDrainAllocation({
       vault,
       initialAllocation,
-      config: { sourceVault: source, targetVault: target, threshold: 980n },
+      config: { sourceVault: source, targetVault: target, threshold: 900n },
     });
 
-    expect(result.transferred).toBe(990n);
-    expect(result.allocation[source].newAmount).toBe(10n);
-    expect(result.allocation[target].newAmount).toBe(990n);
+    expect(result.transferred).toBe(1_000n);
+    expect(result.allocation[source].newAmount).toBe(0n);
+    expect(result.allocation[target].newAmount).toBe(1_000n);
   });
 
-  it('drains 99% of the source vault into target when above threshold', () => {
+  it('drains the available source vault balance into target when above threshold', () => {
     const vault = buildVault({
       sourceAddress: source,
       targetAddress: target,
@@ -152,9 +159,9 @@ describe('computeDrainAllocation', () => {
       config: { sourceVault: source, targetVault: target, threshold: 400n },
     });
 
-    expect(result.transferred).toBe(4_950n);
-    expect(result.allocation[source].newAmount).toBe(50n);
-    expect(result.allocation[target].newAmount).toBe(4_950n);
+    expect(result.transferred).toBe(5_000n);
+    expect(result.allocation[source].newAmount).toBe(0n);
+    expect(result.allocation[target].newAmount).toBe(5_000n);
   });
 
   it('respects destination capacity constraints', () => {
@@ -179,9 +186,36 @@ describe('computeDrainAllocation', () => {
       config: { sourceVault: source, targetVault: target, threshold: 400n },
     });
 
-    expect(result.transferred).toBe(495n);
-    expect(result.allocation[source].newAmount).toBe(4_505n);
-    expect(result.allocation[target].newAmount).toBe(9_995n);
+    expect(result.transferred).toBe(500n);
+    expect(result.allocation[source].newAmount).toBe(4_500n);
+    expect(result.allocation[target].newAmount).toBe(10_000n);
+  });
+
+  it('caps transfer by strategy maxWithdraw even if cash is higher', () => {
+    const vault = buildVault({
+      sourceAddress: source,
+      targetAddress: target,
+      sourceAllocation: 5_000n,
+      targetAllocation: 0n,
+      sourceCash: 5_000n,
+      targetCash: 0n,
+      sourceMaxWithdraw: 1_000n,
+    });
+
+    const initialAllocation = toAllocationState({
+      [source]: 5_000n,
+      [target]: 0n,
+    });
+
+    const result = computeDrainAllocation({
+      vault,
+      initialAllocation,
+      config: { sourceVault: source, targetVault: target, threshold: 100n },
+    });
+
+    expect(result.transferred).toBe(1_000n);
+    expect(result.allocation[source].newAmount).toBe(4_000n);
+    expect(result.allocation[target].newAmount).toBe(1_000n);
   });
 
   it('does not transfer more than available cash in source vault', () => {
@@ -205,8 +239,8 @@ describe('computeDrainAllocation', () => {
       config: { sourceVault: source, targetVault: target, threshold: 100n },
     });
 
-    expect(result.transferred).toBe(1_980n);
-    expect(result.allocation[source].newAmount).toBe(3_020n);
-    expect(result.allocation[target].newAmount).toBe(1_980n);
+    expect(result.transferred).toBe(2_000n);
+    expect(result.allocation[source].newAmount).toBe(3_000n);
+    expect(result.allocation[target].newAmount).toBe(2_000n);
   });
 });

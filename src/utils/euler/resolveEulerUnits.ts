@@ -1,10 +1,11 @@
+import { EvkAbi } from '@/constants/EvkAbi';
 import { EulerNoIrm, type EulerAdaptiveIrm, type EulerIrm } from '@/types/euler';
 import { parseBigIntToNumberWithScale } from '@/utils/common/parser';
+import { PublicClient, type Address } from 'viem';
 
 /** From EVK contract */
 const WAD = BigInt(10) ** BigInt(18);
 const SECONDS_PER_YEAR = 365.2425 * 86400;
-const VIRTUAL_DEPOSIT_AMOUNT = BigInt(1e6);
 const RAY = 10n ** 27n;
 
 /**
@@ -68,29 +69,28 @@ export function resolveEulerSupplyAPY({
 }
 
 /**
- * @notice Converts vault shares to underlying asset amount
- * @dev Uses the formula: assets = shares * (cash + borrows + virtual) / (totalShares + virtual)
+ * @notice Converts vault shares to underlying asset amount using the vault's preview
+ * @dev Delegates to EVault `previewRedeem` to rely on the contract's conversion logic
+ * @param vaultAddress The vault the shares belong to
  * @param shares The number of vault shares to convert
- * @param cash The amount of unused tokens in the vault
- * @param totalBorrows The total amount of borrowed tokens
- * @param totalShares The total number of shares in the vault
+ * @param rpcClient RPC client instance for on-chain reads
  * @returns The equivalent amount of underlying assets
  */
-export function convertEulerSharesToAssets({
+export async function convertEulerSharesToAssets({
+  vaultAddress,
   shares,
-  cash,
-  totalBorrows,
-  totalShares,
+  rpcClient,
 }: {
+  vaultAddress: Address;
   shares: bigint;
-  cash: bigint;
-  totalBorrows: bigint;
-  totalShares: bigint;
+  rpcClient: PublicClient;
 }) {
-  return (
-    (shares * (cash + totalBorrows + VIRTUAL_DEPOSIT_AMOUNT)) /
-    (totalShares + VIRTUAL_DEPOSIT_AMOUNT)
-  );
+  return rpcClient.readContract({
+    address: vaultAddress,
+    abi: EvkAbi,
+    functionName: 'previewRedeem',
+    args: [shares],
+  });
 }
 
 /**

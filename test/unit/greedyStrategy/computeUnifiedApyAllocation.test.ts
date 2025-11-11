@@ -30,6 +30,7 @@ const baseStrategyDetails = {
   totalShares: 0n,
   interestFee: 0,
   supplyCap: 0n,
+  maxWithdraw: 0n,
   irmConfig: {
     type: 'irm' as const,
     baseRate: 0n,
@@ -64,6 +65,7 @@ const buildVault = (allowedStrategies: Address[] = [strategies.low, strategies.h
         ...baseStrategyDetails,
         vault: strategies.low,
         cash: 2_000n,
+        maxWithdraw: 2_000n,
         totalBorrows: 500n,
         supplyCap: 12_000n,
       },
@@ -76,6 +78,7 @@ const buildVault = (allowedStrategies: Address[] = [strategies.low, strategies.h
         ...baseStrategyDetails,
         vault: strategies.high,
         cash: 2_000n,
+        maxWithdraw: 2_000n,
         totalBorrows: 500n,
         supplyCap: 12_000n,
       },

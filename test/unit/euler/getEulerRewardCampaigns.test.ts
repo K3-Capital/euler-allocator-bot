@@ -64,9 +64,6 @@ describe('getEulerRewardCampaigns', () => {
     const result = await getEulerRewardCampigns({
       chainId,
       vaultAddress: zeroAddress,
-      cash: BigInt(0),
-      totalBorrows: BigInt(0),
-      totalShares: BigInt(0),
       rpcClient: mockRpcClient,
     });
     expect(result).toEqual([]);
@@ -88,9 +85,6 @@ describe('getEulerRewardCampaigns', () => {
       getEulerRewardCampigns({
         chainId,
         vaultAddress: zeroAddress,
-        cash: BigInt(0),
-        totalBorrows: BigInt(0),
-        totalShares: BigInt(0),
         rpcClient: mockRpcClient,
       }),
     ).rejects.toThrow();
@@ -141,9 +135,6 @@ describe('getEulerRewardCampaigns', () => {
     const result = await getEulerRewardCampigns({
       chainId,
       vaultAddress: zeroAddress,
-      cash: BigInt(0),
-      totalBorrows: BigInt(0),
-      totalShares: BigInt(0),
       rpcClient: mockRpcClient,
     });
     expect(

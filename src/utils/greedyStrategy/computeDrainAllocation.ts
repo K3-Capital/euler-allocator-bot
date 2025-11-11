@@ -63,9 +63,9 @@ export const computeDrainAllocation = ({
   const sourceDetails = vault.strategies[config.sourceVault].details;
   const targetDetails = vault.strategies[config.targetVault].details;
 
-  const availableCash = getPositive(sourceDetails.cash);
+  const maxWithdraw = getPositive(sourceDetails.maxWithdraw);
   const withdrawable =
-    availableCash < updatedSource.newAmount ? availableCash : updatedSource.newAmount;
+    maxWithdraw < updatedSource.newAmount ? maxWithdraw : updatedSource.newAmount;
 
   const destSupplyCap = getPositive(
     targetDetails.supplyCap - targetDetails.totalBorrows - targetDetails.cash - updatedTarget.diff,
@@ -91,9 +91,7 @@ export const computeDrainAllocation = ({
     return unchangedResult();
   }
 
-  const ninetyNinePercent = (transferCap * 99n) / 100n;
-  // leave a small reserve to avoid rounding issues on-chain
-  const transferAmount = ninetyNinePercent > 0n ? ninetyNinePercent : transferCap;
+  const transferAmount = transferCap;
 
   if (transferAmount === 0n || transferAmount <= config.threshold) {
     return unchangedResult();

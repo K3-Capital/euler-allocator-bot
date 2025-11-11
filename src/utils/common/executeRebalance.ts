@@ -2,6 +2,7 @@ import ENV from '@/constants/constants';
 import { EulerEarnAbi } from '@/constants/EulerEarnAbi';
 import { EvcAbi } from '@/constants/EvcAbi';
 import { Allocation } from '@/types/types';
+import { logger } from '@/utils/common/log';
 import {
   createWalletClient,
   encodeFunctionData,
@@ -74,6 +75,25 @@ export async function executeRebalance({
     args: [batchItems],
   } as const;
   const { request } = await rpcClient.simulateContract(tx);
+
+  const loggableBatchItems = batchItems.map(item => ({
+    targetContract: item.targetContract,
+    onBehalfOfAccount: item.onBehalfOfAccount,
+    value: item.value.toString(),
+    data: item.data,
+  }));
+
+  logger.info({
+    message: 'Prepared rebalance transaction request',
+    evcAddress,
+    broadcast,
+    request: {
+      address: request.address,
+      functionName: request.functionName,
+      account: request.account?.address,
+      args: [loggableBatchItems],
+    },
+  });
 
   if (ENV.MAX_GAS_COST) {
     try {

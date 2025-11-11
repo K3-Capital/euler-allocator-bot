@@ -1,3 +1,4 @@
+import { type Address, type PublicClient } from 'viem';
 import {
   computeEulerAdaptiveInterestRate,
   computeEulerInterestRate,
@@ -77,35 +78,46 @@ describe('resolveEulerUnits', () => {
   });
 
   describe('convertSharesToAssets', () => {
-    it('case - shares = 0', () => {
+    const vaultAddress = '0x0A1b2C3d4E5f6789012345678901234567890123' as Address;
+
+    it('uses previewRedeem to convert shares', async () => {
       const shares = BigInt('1000000000000000000');
-      const result = convertEulerSharesToAssets({
+      const readContract = jest.fn().mockResolvedValue(BigInt('123456789'));
+      const rpcClient = { readContract } as unknown as PublicClient;
+
+      const result = await convertEulerSharesToAssets({
+        vaultAddress,
         shares,
-        cash: BigInt(1000),
-        totalBorrows: BigInt(1000),
-        totalShares: BigInt(0),
+        rpcClient,
       });
-      expect(result.toString()).toBe('1002000000000000000');
+
+      expect(result.toString()).toBe('123456789');
+      expect(readContract).toHaveBeenCalledWith({
+        address: vaultAddress,
+        abi: expect.any(Array),
+        functionName: 'previewRedeem',
+        args: [shares],
+      });
     });
-    it('case - cash + totalBorrows = 0', () => {
-      const shares = BigInt('1000000000000000000');
-      const result = convertEulerSharesToAssets({
+
+    it('returns zero when the vault reports zero assets', async () => {
+      const shares = BigInt(0);
+      const readContract = jest.fn().mockResolvedValue(BigInt(0));
+      const rpcClient = { readContract } as unknown as PublicClient;
+
+      const result = await convertEulerSharesToAssets({
+        vaultAddress,
         shares,
-        cash: BigInt(0),
-        totalBorrows: BigInt(0),
-        totalShares: BigInt(1000),
+        rpcClient,
       });
-      expect(result.toString()).toBe('999000999000999000');
-    });
-    it('case - normal', () => {
-      const shares = BigInt('1000000000000000000');
-      const result = convertEulerSharesToAssets({
-        shares,
-        cash: BigInt(1000),
-        totalBorrows: BigInt(1000),
-        totalShares: BigInt(1000),
+
+      expect(result).toBe(BigInt(0));
+      expect(readContract).toHaveBeenCalledWith({
+        address: vaultAddress,
+        abi: expect.any(Array),
+        functionName: 'previewRedeem',
+        args: [shares],
       });
-      expect(result.toString()).toBe('1000999000999000999');
     });
   });
 

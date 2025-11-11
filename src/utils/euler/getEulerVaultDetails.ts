@@ -1,3 +1,4 @@
+import { EvkAbi } from '@/constants/EvkAbi';
 import { VaultLensAbi } from '@/constants/VaultLensAbi';
 import { protocolSchema, StrategyDetails, strategyDetailsSchema } from '@/types/types';
 import { getEulerIrmConfig } from '@/utils/euler/getEulerIrmConfig';
@@ -28,6 +29,7 @@ export async function getEulerVaultDetails({
   vaultAddress,
   vaultSymbol,
   lensAddress,
+  holderAddress,
   rpcClient,
 }: {
   assetDecimals: number;
@@ -35,14 +37,23 @@ export async function getEulerVaultDetails({
   vaultAddress: Address;
   vaultSymbol: string;
   lensAddress: Address;
+  holderAddress: Address;
   rpcClient: PublicClient;
 }): Promise<StrategyDetails> {
-  const lensData = await rpcClient.readContract({
-    address: lensAddress,
-    abi: VaultLensAbi,
-    functionName: 'getVaultInfoFull',
-    args: [vaultAddress],
-  });
+  const [lensData, maxWithdraw] = await Promise.all([
+    rpcClient.readContract({
+      address: lensAddress,
+      abi: VaultLensAbi,
+      functionName: 'getVaultInfoFull',
+      args: [vaultAddress],
+    }),
+    rpcClient.readContract({
+      address: vaultAddress,
+      abi: EvkAbi,
+      functionName: 'maxWithdraw',
+      args: [holderAddress],
+    }),
+  ]);
 
   const cash = lensData.totalCash;
   const totalBorrows = lensData.totalBorrowed;
@@ -71,9 +82,6 @@ export async function getEulerVaultDetails({
   const rewardCampaigns = await getEulerRewardCampigns({
     vaultAddress,
     chainId,
-    cash,
-    totalBorrows,
-    totalShares,
     rpcClient,
   });
   const rewardAPY = computeMerklRewardAPY({
@@ -96,6 +104,7 @@ export async function getEulerVaultDetails({
     totalShares,
     interestFee,
     supplyCap,
+    maxWithdraw,
     irmConfig,
   });
 }

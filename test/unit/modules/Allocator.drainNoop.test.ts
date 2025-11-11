@@ -42,6 +42,7 @@ const baseStrategyDetails = {
   totalShares: 0n,
   interestFee: 0,
   supplyCap: 1_000_000n,
+  maxWithdraw: 0n,
   irmConfig: {
     type: 'irm' as const,
     baseRate: 0n,

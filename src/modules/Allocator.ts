@@ -17,7 +17,7 @@ import { getCurrentAllocation } from '@/utils/common/getCurrentAllocation';
 import { getRunLog, logger } from '@/utils/common/log';
 import { parseContractAddress } from '@/utils/common/parser';
 import { getVaultLabel } from '@/utils/common/vaultLabels';
-import { getEulerEarnInternalBalance } from '@/utils/euler/getEulerEarnInternalBalance';
+import { getEulerBalanceOf } from '@/utils/euler/getEulerBalanceOf';
 import { getEulerVaultDetails } from '@/utils/euler/getEulerVaultDetails';
 import { computeDrainAllocation } from '@/utils/greedyStrategy/computeDrainAllocation';
 import { computeGreedyInitAlloc } from '@/utils/greedyStrategy/computeGreedyInitAlloc';
@@ -162,16 +162,13 @@ class Allocator {
             vaultAddress: strategyAddress,
             vaultSymbol: strategy.info.vaultSymbol,
             lensAddress: this.evkVaultLensAddress,
+            holderAddress: this.earnVaultAddress,
             rpcClient: this.rpcClient,
           });
 
-          const allocation = await getEulerEarnInternalBalance({
+          const allocation = await getEulerBalanceOf({
             address: this.earnVaultAddress,
             vaultAddress: strategyAddress,
-            cash: details.cash,
-            totalBorrows: details.totalBorrows,
-            totalShares: details.totalShares,
-            chainId: this.chainId,
             rpcClient: this.rpcClient,
           });
           const label = await getVaultLabel(strategyAddress, this.chainId);

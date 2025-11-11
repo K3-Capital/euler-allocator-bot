@@ -23,6 +23,7 @@ const buildStrategyDetails = (overrides?: Partial<StrategyDetails>): StrategyDet
   totalShares: 0n,
   interestFee: 0,
   supplyCap: 1_000_000n,
+  maxWithdraw: 0n,
   irmConfig: { type: 'noIrm' },
   ...overrides,
 });

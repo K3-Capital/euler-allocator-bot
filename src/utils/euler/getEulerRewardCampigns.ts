@@ -16,9 +16,6 @@ import { PublicClient, type Address } from 'viem';
  * @dev Fetches campaign data from Merkl API and filters for active, non-whitelisted campaigns
  * @param vaultAddress The address of the vault to query rewards for
  * @param chainId The chain ID to query rewards for
- * @param cash The amount of unused tokens in the vault
- * @param totalBorrows The total amount of borrowed tokens
- * @param totalShares The total number of shares in the vault
  * @param rpcClient RPC client instance for querying on-chain data
  * @returns Array of active reward campaigns with daily rewards and blacklisted supply details
  * @throws Will send telegram error message if no Merkl data found for chain or price not found for underlying token
@@ -26,16 +23,10 @@ import { PublicClient, type Address } from 'viem';
 export async function getEulerRewardCampigns({
   vaultAddress,
   chainId,
-  cash,
-  totalBorrows,
-  totalShares,
   rpcClient,
 }: {
   vaultAddress: Address;
   chainId: number;
-  cash: bigint;
-  totalBorrows: bigint;
-  totalShares: bigint;
   rpcClient: PublicClient;
 }) {
   const response = await fetch(
@@ -83,10 +74,6 @@ export async function getEulerRewardCampigns({
             getEulerBalanceOf({
               address: parseContractAddress(address),
               vaultAddress,
-              cash,
-              totalBorrows,
-              totalShares,
-              chainId,
               rpcClient,
             }),
           ),
